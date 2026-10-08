@@ -88,23 +88,27 @@ Copy-Item .env.example .env
 ```
 
 Confirm that `.env` contains the correct project endpoint, agent names, and
-embedding deployment:
+embedding endpoint/deployment. Copy the Azure OpenAI key from the Foundry
+project Models page into the private `.env` file:
 
 ```env
 AZURE_AI_FOUNDRY_PROJECT_ENDPOINT=https://hakunamata.services.ai.azure.com/api/projects/hakunamatata-new
+AZURE_OPENAI_ENDPOINT=https://hakunamata.openai.azure.com/openai/v1
+AZURE_OPENAI_API_KEY=<current Azure OpenAI key>
 CLAUSE_EXTRACTION_AGENT_NAME=Clause-Extraction-Agent-sk
 COMPLIANCE_VALIDATION_AGENT_NAME=compliance-validation-agent-sk
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-ada-002
 ```
 
 Do not add secrets to `.env.example`. The private `.env` file is ignored by
-Git.
+Git. Rotate any key that has previously appeared in chat or screenshots before
+using it.
 
 ### 4. Authenticate
 
-The current `azure-ai-projects` SDK uses Microsoft Entra authentication for
-Foundry agent and project access. API-key authentication is not used by this
-workflow.
+The `azure-ai-projects` SDK uses Microsoft Entra authentication for Foundry
+agent access. Local RAG uses the direct Azure OpenAI v1 endpoint and API key
+only for the embedding deployment.
 
 On a development VM with Azure CLI:
 

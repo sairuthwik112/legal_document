@@ -1,6 +1,7 @@
 reportlab
 azure-ai-projects>=2.3.0
 azure-identity>=1.25.0
+openai>=2.0.0
 pypdf>=6.0.0
 python-dotenv
 pytest>=9.0.0

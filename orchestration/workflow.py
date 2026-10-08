@@ -13,6 +13,7 @@ from typing import Any
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
+from openai import OpenAI
 from pypdf import PdfReader
 
 from rag.local_retrieval import retrieve_requirements
@@ -34,6 +35,8 @@ class WorkflowError(RuntimeError):
 @dataclass(frozen=True)
 class Settings:
     project_endpoint: str
+    openai_endpoint: str
+    openai_api_key: str
     clause_agent_name: str
     compliance_agent_name: str
     embedding_model: str
@@ -43,6 +46,8 @@ class Settings:
         load_dotenv(ROOT / ".env")
         values = {
             "project_endpoint": os.getenv("AZURE_AI_FOUNDRY_PROJECT_ENDPOINT", ""),
+            "openai_endpoint": os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+            "openai_api_key": os.getenv("AZURE_OPENAI_API_KEY", ""),
             "clause_agent_name": os.getenv(
                 "CLAUSE_EXTRACTION_AGENT_NAME", "clause-extraction-agent"
             ),
@@ -57,6 +62,8 @@ class Settings:
         if missing:
             variable_names = {
                 "project_endpoint": "AZURE_AI_FOUNDRY_PROJECT_ENDPOINT",
+                "openai_endpoint": "AZURE_OPENAI_ENDPOINT",
+                "openai_api_key": "AZURE_OPENAI_API_KEY",
                 "clause_agent_name": "CLAUSE_EXTRACTION_AGENT_NAME",
                 "compliance_agent_name": "COMPLIANCE_VALIDATION_AGENT_NAME",
                 "embedding_model": "AZURE_OPENAI_EMBEDDING_DEPLOYMENT",
@@ -208,13 +215,22 @@ def run_workflow(
         )
         validate_clause_result(clauses)
 
-        with project_client.get_openai_client() as openai_client:
-            retrieved_requirements = retrieve_requirements(
-                openai_client=openai_client,
-                embedding_model=settings.embedding_model,
-                clauses=clauses["clauses"],
-                knowledge_dir=KNOWLEDGE_DIR,
-            )
+        with OpenAI(
+            base_url=settings.openai_endpoint,
+            api_key=settings.openai_api_key,
+        ) as openai_client:
+            try:
+                retrieved_requirements = retrieve_requirements(
+                    openai_client=openai_client,
+                    embedding_model=settings.embedding_model,
+                    clauses=clauses["clauses"],
+                    knowledge_dir=KNOWLEDGE_DIR,
+                )
+            except Exception as exc:
+                raise WorkflowError(
+                    "Local policy retrieval failed while creating embeddings with "
+                    f"deployment '{settings.embedding_model}': {exc}"
+                ) from exc
 
         compliance = invoke_agent(
             project_client,
