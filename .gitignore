@@ -6,6 +6,7 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 venv/
 
@@ -15,3 +16,4 @@ Thumbs.db
 
 # Session/local artifacts
 *.log
+memory/*.json
